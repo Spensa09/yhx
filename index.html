@@ -20,6 +20,7 @@
     .composer{border-top:1px solid var(--line);padding:15px 18px 18px;background:#fff9fc}.quick{display:flex;gap:8px;overflow:auto;padding-bottom:12px}.quick button{white-space:nowrap;border:1px solid #f4cada;color:#9d4d6a;background:#fff;border-radius:99px;padding:8px 12px;font-size:13px}.inputrow{display:flex;gap:10px}.inputrow input{flex:1;border:1px solid var(--line);background:#fff;border-radius:17px;padding:13px 15px;outline:none;color:var(--ink)}.inputrow input:focus{border-color:#ef8aaa;box-shadow:0 0 0 4px #ff5d8f18}.send{border:0;border-radius:16px;width:48px;background:var(--pink);color:white;font-size:18px}.send:disabled{opacity:.45}.mobile-note{display:none}.account{margin-left:auto;display:flex;align-items:center;gap:8px}.account img{width:30px;height:30px;border-radius:50%}.account button,.login-btn{border:0;border-radius:14px;padding:9px 13px;background:#211b28;color:#fff}.login-layer{position:fixed;inset:0;z-index:20;background:linear-gradient(145deg,#fff4f8,#eee5ff);display:grid;place-items:center;padding:24px}.login-card{width:min(420px,100%);background:#ffffffdd;border:1px solid #fff;border-radius:28px;padding:30px;box-shadow:0 24px 80px #4d314c2b;text-align:center}.login-card .logo{margin:0 auto 16px}.login-card h2{margin:0 0 8px}.login-card p{color:var(--muted);line-height:1.6}.login-card .login-btn{width:100%;padding:13px;margin:12px 0}.login-card small{display:block;color:#968b99;line-height:1.5}.hidden{display:none!important}
     dialog{border:0;border-radius:24px;padding:0;width:min(430px,calc(100% - 32px));box-shadow:0 24px 80px #321d3044;color:var(--ink)}dialog::backdrop{background:#24192499;backdrop-filter:blur(5px)}.settings{padding:24px}.settings h2{margin:0 0 6px}.settings p{margin:0 0 20px;color:var(--muted);font-size:14px;line-height:1.55}.setting-actions{display:grid;gap:10px}.setting-actions button,.close-dialog{border:1px solid var(--line);background:#fff;border-radius:14px;padding:12px;text-align:left}.close-dialog{width:100%;margin-top:18px;text-align:center;background:var(--ink);color:#fff}.reset{color:#a54b6c!important}.hint{font-size:12px!important;margin-top:14px!important}
     @media(max-width:760px){.app{display:block;padding:0}.sidebar{display:none}.chat{border-radius:0;min-height:100vh}.top{position:sticky;top:0;z-index:2;background:rgba(255,255,255,.9)}.bubble{max-width:84%}.messages{padding:20px 16px}.mobile-note{display:block;font-size:11px;color:#9b8f9d;padding:0 18px 8px;text-align:center}}
+    .report-photo{display:block;width:min(320px,100%);max-height:380px;object-fit:cover;border-radius:14px;margin:0 0 10px}
   </style>
 </head>
 <body>
@@ -42,7 +43,7 @@
   </section>
 </main>
 <div class="login-layer" id="loginLayer"><div class="login-card"><div class="logo">✦</div><h2>登录小严宇宙</h2><p>用 Google 账号登录后，手机和电脑会同步你的聊天记录。</p><button class="login-btn" id="loginBtn">使用 Google 账号登录</button><small>粉丝向 AI 模拟，并非严浩翔本人、工作室或官方服务。</small></div></div>
-<dialog id="settingsDialog"><div class="settings"><h2>个性化设置</h2><p>选择头像和聊天背景。图片会压缩后同步到你的账号。</p><div class="setting-actions"><button id="avatarPick">更换头像</button><button id="backgroundPick">更换聊天背景</button><button id="resetAvatar" class="reset">恢复默认头像</button><button id="resetBackground" class="reset">恢复默认背景</button></div><p class="hint">建议头像使用正方形照片；背景使用竖图或清晰横图。</p><button class="close-dialog" id="closeSettings">完成</button><input hidden type="file" id="avatarFile" accept="image/*"><input hidden type="file" id="backgroundFile" accept="image/*"></div></dialog>
+<dialog id="settingsDialog"><div class="settings"><h2>个性化设置</h2><p>选择头像、聊天背景和模拟动态可使用的照片。图片会压缩后同步到你的账号。</p><div class="setting-actions"><button id="avatarPick">更换头像</button><button id="backgroundPick">更换聊天背景</button><button id="reportPhotosPick">添加动态照片</button><button id="resetAvatar" class="reset">恢复默认头像</button><button id="resetBackground" class="reset">恢复默认背景</button></div><p class="hint" id="photoHint">动态照片只会从你上传的图片中随机选择，约四分之一的模拟动态会带图。</p><button class="close-dialog" id="closeSettings">完成</button><input hidden type="file" id="avatarFile" accept="image/*"><input hidden type="file" id="backgroundFile" accept="image/*"><input hidden multiple type="file" id="reportPhotosFile" accept="image/*"></div></dialog>
 <script type="module">
   import {initializeApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
   import {getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
@@ -55,25 +56,82 @@
   const starters=[{r:'bot',t:'今天先来留一条。刚把耳机戴上，准备听一遍练习录音，看看还有哪里能再调整。',tag:'模拟动态'}];
   const reports=[
     '刚结束一轮练习。先不急着重复，回听一下细节，节奏和咬字都要再确认。',
-    '路上戴着耳机听歌。偶尔换一种编曲去听，同一段旋律会有完全不同的感觉。',
+    '路上戴着耳机听歌。换一种编曲去听，同一段旋律会有完全不同的感觉。',
     '今天在整理最近记下来的旋律和词句。先存着，等它们慢慢长成完整的作品。',
     '排练中间休息一会儿。舞台上的几分钟，背后其实要拆成很多很小的动作来练。',
     '刚看完一次舞台回放。现场感觉和镜头里不完全一样，还是要从观众视角再看一遍。',
-    '今天的练习重点是把气息和节奏放稳。越是想表现得有力量，越不能着急。',
+    '今天重点练气息和节奏。越想表现得有力量，越不能着急。',
+    '演唱会排练结束，脑子里还在自动走位。准备先吃点东西再继续复盘。',
+    '舞蹈老师今天改了一个动作，幅度看起来不大，但卡准拍子之后整个感觉都变了。',
+    '彩排时试了新的灯光和舞台效果。站在台上看不到全貌，回放的时候才发现画面很有意思。',
+    '今天练了一段体力消耗很大的舞，最后一遍反而最整齐。大概都不想白练。',
+    '录音棚里同一句试了几个版本。先全部留下，过一会儿再听，耳朵会更诚实。',
+    '刚写下一个突然冒出来的节奏，只有几秒也先存好。有些东西以后会自己找到位置。',
+    '外务候场中。现场比预计安静，正好把接下来的流程再过一遍。',
+    '今天录制的环节节奏很快，结束以后才发现时间已经过去很久了。',
+    '化妆间暂时没人说话，大家都在低头看流程。估计再过几分钟就会重新热闹起来。',
+    '通告结束上车了。白天一直在说话，现在想安静戴会儿耳机。',
+    '刚吃完饭。点菜的时候讨论了很久，最后上桌的还是几样大家最熟悉的。',
+    '回去路上看到一家店的招牌很特别，随手拍了下来。以后也许能变成舞台视觉的灵感。',
+    '今天难得有一点空档，整理桌面时翻到以前写过的几句话。现在看还是挺有意思。',
+    '天气有点闷，出门前犹豫了半天穿什么。最后决定简单一点，省时间。',
+    '晚上准备早点休息。说是早点，但还要先把今天没听完的歌听完。',
+    '刚运动完，坐下来之后才发现比想象中累。先补水，其他事情等会儿再说。',
+    '今天拍到一张还不错的天空。照片先留着，不一定要立刻发出来。',
+    '刚醒了一会儿，窗帘还没完全拉开。今天先慢慢进入状态。',
+    '早餐吃得有点晚，现在终于清醒了。果然有些事情不能空着肚子想。',
+    '刚点完外卖，又开始怀疑是不是点多了。等送到再判断。',
+    '今天喝到一杯味道不错的饮料，第一口很普通，后面反而越来越顺口。',
+    '路过便利店进去转了一圈，本来只想买水，出来的时候手里多了好几样东西。',
+    '刚洗完头，准备让它自然干一会儿。这个时间适合什么都不做。',
+    '今天出门忘了看天气，走到一半才发现风比想象中大。',
+    '窗外突然开始下雨。临时取消一点安排，好像也不算坏事。',
+    '在车上看了一路窗外，明明走过很多次，今天还是发现了以前没注意到的店。',
+    '刚整理完衣柜。过程比预计久，但至少现在找东西会容易一点。',
+    '房间收拾到一半开始翻旧东西，结果整理变成了回忆时间。',
+    '手机相册需要清理了，截图比照片还多。很多当时觉得重要的东西现在已经看不懂了。',
+    '刚刷到一个很好笑的视频，退出以后又想起来，还是忍不住笑。',
+    '今天循环听一首歌很多遍。不是在研究什么，只是刚好很适合现在。',
+    '戴着耳机散了一会儿步。没有特别的目的地，走累了就回去。',
+    '刚打完一局游戏，差一点赢的时候最容易不服。先停一下，等会儿再来。',
+    '今天手气一般，但胜负欲不允许我轻易结束。最后再试一次。',
+    '刚运动完准备拉伸。做的时候觉得麻烦，不做明天会更麻烦。',
+    '晚上有点饿，在认真考虑要不要加餐。这个问题比想象中难决定。',
+    '今天吃到一道小时候会喜欢的味道，突然就想起一些很久没想过的画面。',
+    '现在在等电梯。短短几十秒，也足够把刚才忘掉的事情重新想起来。',
+    '刚充上电，手机和人都需要暂停一会儿。',
+    '今天没发生什么特别的事。普通的一天也挺好。',
+    '有一点困，但还不想睡。准备再安静坐一会儿。',
+    '刚把明天要用的东西放到门边，免得早上又临时找。',
+    '今天看到一只很有性格的小动物，路过以后还回头看了好几次。',
+    '随手拍的照片有时候比认真构图的更自然。今天相册里多了几张这种。',
+    '和大家聊天的时候突然跑题，最后讨论了半天到底哪种零食最好吃。',
+    '有人讲了一个并不好笑的冷笑话，结果大家因为太安静反而都笑了。',
+    '今天大家都各忙各的，偶尔在群里冒个泡，确认还没有失联。',
+    '在车上和大家玩了一个很幼稚但很上头的小游戏，胜负欲突然全部上线。',
+    '排练休息的时候有人放错了伴奏，所有人还是顺着唱了几句，最后自己先笑场。',
+    '刚才大家一起对流程，本来很严肃，结果一句话被接成了梗，后面差点没拉回来。',
+    '有人今天一直在哼同一段旋律，现在成功让整个休息室都会唱了。',
+    '团体排练结束。每个人习惯不一样，但一起站上台的时候还是会找到同一个节奏。',
+    '今天和成员们一起吃饭，聊天从工作一路跑题，最后已经没人记得最开始在说什么。',
+    '刚刚被提醒不要只顾着研究细节忘了休息。知道了，先停十分钟。',
+    '今天遇到一个临时变化。先把能控制的部分做好，剩下的到现场再判断。',
+    '有些事情想清楚之前不急着表达。安静一点，不代表没有自己的判断。',
     '收工之后还有一点兴奋，先记下今天突然想到的表达方式，免得明天忘了。',
     '最近在听不同风格的音乐。不是为了立刻模仿，而是想知道别人怎么处理声音和情绪。',
     '准备开始今天的训练。先把基础做扎实，再去尝试新的舞台想法。',
-    '今天看到一段以前的舞台，能很明显感觉到当时和现在处理方式的变化。成长大概就是这样被记录下来的。',
+    '今天看到一段以前的舞台，能感觉到当时和现在处理方式的变化。成长大概就是这样被记录下来的。',
     '晚上留一点安静时间，把白天太快略过的想法重新整理一下。',
     '刚吃完东西，短暂放空。等会儿继续把没有完成的部分收尾。'
   ];
-  let history=[],currentUser=null,unsubscribe=null;
+  let history=[],currentUser=null,unsubscribe=null,reportPhotos=[];
   const time=()=>new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
   function esc(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
-  function render(){box.querySelectorAll('.bubble').forEach(x=>x.remove());history.forEach(x=>add(x.r,x.t,false,x.tag||'',x.createdAt));}
-  function add(r,t,save=true,tag='',createdAt=null){const el=document.createElement('div');el.className='bubble '+(r==='user'?'user':'bot');let stamp=createdAt?.toDate?createdAt.toDate():createdAt?new Date(createdAt):new Date();el.innerHTML=esc(t)+'<div class="meta">'+(tag?esc(tag)+' · ':'')+stamp.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})+'</div>';box.append(el);box.scrollTop=box.scrollHeight;if(save&&currentUser){addDoc(collection(db,'users',currentUser.uid,'messages'),{r,t,tag,createdAt:serverTimestamp()}).catch(()=>alert('暂时无法同步，请检查网络后重试。'))}}
+  function render(){box.querySelectorAll('.bubble').forEach(x=>x.remove());history.forEach(x=>add(x.r,x.t,false,x.tag||'',x.createdAt,x.photo||''));}
+  function add(r,t,save=true,tag='',createdAt=null,photo=''){const el=document.createElement('div');el.className='bubble '+(r==='user'?'user':'bot');let stamp=createdAt?.toDate?createdAt.toDate():createdAt?new Date(createdAt):new Date();el.innerHTML=(photo?'<img class="report-photo" src="'+photo+'" alt="你上传的模拟动态照片">':'')+esc(t)+'<div class="meta">'+(tag?esc(tag)+' · ':'')+stamp.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})+'</div>';box.append(el);box.scrollTop=box.scrollHeight;if(save&&currentUser){addDoc(collection(db,'users',currentUser.uid,'messages'),{r,t,tag,photo,createdAt:serverTimestamp()}).catch(()=>alert('暂时无法同步，请检查网络后重试。'))}}
   function send(t){t=t.trim();if(!t)return;add('user',t,true,'你的留言');input.value=''}
-  function report(){if(!currentUser)return;let used=history.filter(x=>x.r==='bot').slice(-5).map(x=>x.t),pool=reports.filter(x=>!used.includes(x));if(!pool.length)pool=reports;add('bot',pool[Math.floor(Math.random()*pool.length)],true,'模拟动态');localStorage.setItem(lastKey,String(Date.now()))}
+  const dailyReports=reports.filter(t=>/早餐|外卖|饮料|便利店|洗完头|天气|下雨|窗外|衣柜|房间|相册|视频|散步|游戏|零食|吃饭|充电|困|小动物|照片|群里|普通的一天/.test(t));
+  async function report(){if(!currentUser)return;if(!reportPhotos.length){const s=await getDocs(collection(db,'users',currentUser.uid,'photos'));reportPhotos=s.docs.map(d=>d.data().data).filter(Boolean).slice(-20)}let used=history.filter(x=>x.r==='bot').slice(-7).map(x=>x.t),base=Math.random()<.72&&dailyReports.length?dailyReports:reports,pool=base.filter(x=>!used.includes(x));if(!pool.length)pool=base;const photo=reportPhotos.length&&Math.random()<.25?reportPhotos[Math.floor(Math.random()*reportPhotos.length)]:'';add('bot',pool[Math.floor(Math.random()*pool.length)],true,'粉丝向模拟动态',null,photo);localStorage.setItem(lastKey,String(Date.now()))}
   form.addEventListener('submit',e=>{e.preventDefault();send(input.value)});
   function schedule(){setTimeout(()=>{report();schedule()},90000+Math.random()*150000)}schedule();
   const avatarEls=[document.querySelector('.avatar'),document.querySelector('.mini')],dialog=document.querySelector('#settingsDialog');
@@ -84,6 +142,8 @@
   document.querySelector('#settingsBtn').onclick=()=>dialog.showModal();document.querySelector('#settingsTop').onclick=()=>dialog.showModal();document.querySelector('#closeSettings').onclick=()=>dialog.close();
   document.querySelector('#avatarPick').onclick=()=>document.querySelector('#avatarFile').click();document.querySelector('#backgroundPick').onclick=()=>document.querySelector('#backgroundFile').click();
   document.querySelector('#avatarFile').onchange=e=>saveImage(e.target.files[0],'avatar');document.querySelector('#backgroundFile').onchange=e=>saveImage(e.target.files[0],'background');
+  document.querySelector('#reportPhotosPick').onclick=()=>document.querySelector('#reportPhotosFile').click();
+  document.querySelector('#reportPhotosFile').onchange=async e=>{if(!currentUser)return;const files=[...e.target.files].slice(0,8);for(const file of files){await new Promise(resolve=>resizeImage(file,900,.68,async data=>{if(data.length<500000)await addDoc(collection(db,'users',currentUser.uid,'photos'),{data,createdAt:serverTimestamp()});resolve()}))}const s=await getDocs(collection(db,'users',currentUser.uid,'photos'));reportPhotos=s.docs.map(d=>d.data().data).filter(Boolean).slice(-20);document.querySelector('#photoHint').textContent=`已保存 ${reportPhotos.length} 张动态照片。约四分之一的模拟动态会随机带图。`;e.target.value=''};
   document.querySelector('#resetAvatar').onclick=async()=>{applyAvatar('');if(currentUser)await setDoc(doc(db,'users',currentUser.uid,'settings','theme'),{avatar:''},{merge:true})};document.querySelector('#resetBackground').onclick=async()=>{applyBackground('');if(currentUser)await setDoc(doc(db,'users',currentUser.uid,'settings','theme'),{background:''},{merge:true})};
   document.querySelector('#clearBtn').onclick=async()=>{if(!currentUser||!confirm('确定清空账号中的全部动态和留言吗？此操作会同步到所有设备。'))return;const s=await getDocs(collection(db,'users',currentUser.uid,'messages'));const b=writeBatch(db);s.forEach(d=>b.delete(d.ref));await b.commit();await addDoc(collection(db,'users',currentUser.uid,'messages'),{...starters[0],createdAt:serverTimestamp()})};
   document.querySelector('#profileBtn').onclick=()=>alert('公开资料卡｜严浩翔\n\n2004年出生于重庆，中国歌手、演员，时代少年团成员。公开舞台与作品中较多接触说唱、歌曲创作和舞台表演。\n\n本页面只把这些公开职业背景作为创作方向；所有“正在做什么”的消息都是程序生成的虚构情境，不对应真实行程、私人生活或本人观点。');
