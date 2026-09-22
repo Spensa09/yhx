@@ -21,6 +21,8 @@
     dialog{border:0;border-radius:24px;padding:0;width:min(430px,calc(100% - 32px));box-shadow:0 24px 80px #321d3044;color:var(--ink)}dialog::backdrop{background:#24192499;backdrop-filter:blur(5px)}.settings{padding:24px}.settings h2{margin:0 0 6px}.settings p{margin:0 0 20px;color:var(--muted);font-size:14px;line-height:1.55}.setting-actions{display:grid;gap:10px}.setting-actions button,.close-dialog{border:1px solid var(--line);background:#fff;border-radius:14px;padding:12px;text-align:left}.close-dialog{width:100%;margin-top:18px;text-align:center;background:var(--ink);color:#fff}.reset{color:#a54b6c!important}.hint{font-size:12px!important;margin-top:14px!important}
     @media(max-width:760px){.app{display:block;padding:0}.sidebar{display:none}.chat{border-radius:0;min-height:100vh}.top{position:sticky;top:0;z-index:2;background:rgba(255,255,255,.9)}.bubble{max-width:84%}.messages{padding:20px 16px}.mobile-note{display:block;font-size:11px;color:#9b8f9d;padding:0 18px 8px;text-align:center}}
     .report-photo{display:block;width:min(320px,100%);max-height:380px;object-fit:cover;border-radius:14px;margin:0 0 10px}
+    html,body{height:100%;overflow:hidden}.app{height:100dvh;min-height:0;overflow:hidden}.sidebar{height:calc(100dvh - 48px);min-height:0;overflow:auto}.chat{height:calc(100dvh - 48px);min-height:0}.messages{min-height:0;overflow-y:auto;overscroll-behavior:contain}.composer{position:relative;z-index:3;flex-shrink:0}
+    @media(max-width:760px){html,body{height:100%;overflow:hidden}.app{height:100dvh;min-height:100dvh;overflow:hidden}.chat{height:100dvh;min-height:0;max-height:100dvh}.messages{min-height:0;overflow-y:auto}.composer{padding-bottom:max(18px,env(safe-area-inset-bottom))}}
   </style>
 </head>
 <body>
