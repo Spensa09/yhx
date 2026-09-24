@@ -64,12 +64,31 @@
     '刚看完一次舞台回放。现场感觉和镜头里不完全一样，还是要从观众视角再看一遍。',
     '今天重点练气息和节奏。越想表现得有力量，越不能着急。',
     '演唱会排练结束，脑子里还在自动走位。准备先吃点东西再继续复盘。',
+    '演唱会彩排刚告一段落，今天重新顺了一遍开场。灯光亮起来的那一秒，气氛一下就不一样了。',
+    '在后台等下一轮联排，耳返里还放着刚才的伴奏。趁现在把一个容易抢拍的位置再记一下。',
+    '今天试了演唱会服装和舞台灯光，镜子里看和站到台上看完全是两种感觉。',
+    '刚结束整场联排，大家下台以后还在讨论哪个环节最容易笑场。先补充一点能量。',
     '舞蹈老师今天改了一个动作，幅度看起来不大，但卡准拍子之后整个感觉都变了。',
     '彩排时试了新的灯光和舞台效果。站在台上看不到全貌，回放的时候才发现画面很有意思。',
     '今天练了一段体力消耗很大的舞，最后一遍反而最整齐。大概都不想白练。',
     '录音棚里同一句试了几个版本。先全部留下，过一会儿再听，耳朵会更诚实。',
     '刚写下一个突然冒出来的节奏，只有几秒也先存好。有些东西以后会自己找到位置。',
+    '今天重新听了几首自己的歌。隔一段时间再听，会发现当时留下的情绪比细节更清楚。',
+    '录自己的歌时又试了一种语气。同一句换一个重音，画面感就完全不一样。',
+    '刚把新写的一小段旋律存下来，还没有名字。先让它在备忘录里待几天。',
+    '今天和制作老师聊了一会儿编曲，想保留力量感，也想让安静的部分更有空间。',
+    '在回听自己的舞台版本，有些歌录音时是一种感觉，现场唱出来又会长成另一种样子。',
+    'MV 模拟拍摄今天换了好几个场景，成片可能只有几秒，但每个镜头都要反复确认。',
+    '刚拍完一段夜景 MV 情境，风比预想中大，衣角的效果倒是意外地合适。',
+    'MV 现场在调整镜头轨迹，我先坐在旁边听一遍歌，重新找一下等会儿要表达的状态。',
+    '今天看到了一版 MV 粗剪，有个镜头拍的时候没觉得特别，剪进去以后反而很有故事感。',
     '外务候场中。现场比预计安静，正好把接下来的流程再过一遍。',
+    '今天是品牌物料模拟拍摄，现场准备了好几套不同感觉的造型。先把流程走完，再看看成片。',
+    '刚拍完一组 LV 主题的模拟时尚物料，灯光和布景很有电影感。现在准备换场景。',
+    'KFC 主题模拟拍摄的间隙，现场的香味很容易让人分心。大家已经开始研究结束后吃什么了。',
+    '今天拍了奥利奥主题的模拟物料，道具摆得很整齐，但拍到后面还是有人忍不住先吃了一块。',
+    '魔芋爽主题的模拟拍摄刚结束，大家在休息区互相比较谁更能吃辣，结果谁也不肯先认输。',
+    '外务收工上车了。今天镜头切换得很快，直到结束才有空回想刚才都拍了什么。',
     '今天录制的环节节奏很快，结束以后才发现时间已经过去很久了。',
     '化妆间暂时没人说话，大家都在低头看流程。估计再过几分钟就会重新热闹起来。',
     '通告结束上车了。白天一直在说话，现在想安静戴会儿耳机。',
@@ -133,7 +152,8 @@
   function add(r,t,save=true,tag='',createdAt=null,photo='',move=true){const el=document.createElement('div');el.className='bubble '+(r==='user'?'user':'bot');let stamp=createdAt?.toDate?createdAt.toDate():createdAt?new Date(createdAt):new Date();el.innerHTML=(photo?'<img class="report-photo" src="'+photo+'" alt="你上传的模拟动态照片">':'')+esc(t)+'<div class="meta">'+(tag?esc(tag)+' · ':'')+stamp.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})+'</div>';box.append(el);if(move)requestAnimationFrame(()=>{box.scrollTop=box.scrollHeight});if(save&&currentUser){addDoc(collection(db,'users',currentUser.uid,'messages'),{r,t,tag,photo,createdAt:serverTimestamp()}).catch(()=>alert('暂时无法同步，请检查网络后重试。'))}}
   function send(t){t=t.trim();if(!t)return;add('user',t,true,'你的留言');input.value='';requestAnimationFrame(()=>input.focus({preventScroll:true}))}
   const dailyReports=reports.filter(t=>/早餐|外卖|饮料|便利店|洗完头|天气|下雨|窗外|衣柜|房间|相册|视频|散步|游戏|零食|吃饭|充电|困|小动物|照片|群里|普通的一天/.test(t));
-  async function report(){if(!currentUser)return;if(!reportPhotos.length){const s=await getDocs(collection(db,'users',currentUser.uid,'photos'));reportPhotos=s.docs.map(d=>d.data().data).filter(Boolean).slice(-20)}let used=history.filter(x=>x.r==='bot').slice(-7).map(x=>x.t),base=Math.random()<.72&&dailyReports.length?dailyReports:reports,pool=base.filter(x=>!used.includes(x));if(!pool.length)pool=base;const photo=reportPhotos.length&&Math.random()<.25?reportPhotos[Math.floor(Math.random()*reportPhotos.length)]:'';add('bot',pool[Math.floor(Math.random()*pool.length)],true,'粉丝向模拟动态',null,photo);localStorage.setItem(lastKey,String(Date.now()))}
+  const featuredReports=reports.filter(t=>/演唱会|联排|后台|品牌|LV|KFC|奥利奥|魔芋爽|自己的歌|制作老师|MV/.test(t));
+  async function report(){if(!currentUser)return;if(!reportPhotos.length){const s=await getDocs(collection(db,'users',currentUser.uid,'photos'));reportPhotos=s.docs.map(d=>d.data().data).filter(Boolean).slice(-20)}let used=history.filter(x=>x.r==='bot').slice(-7).map(x=>x.t),roll=Math.random(),base=roll<.14&&featuredReports.length?featuredReports:roll<.76&&dailyReports.length?dailyReports:reports,pool=base.filter(x=>!used.includes(x));if(!pool.length)pool=base;const photo=reportPhotos.length&&Math.random()<.25?reportPhotos[Math.floor(Math.random()*reportPhotos.length)]:'';add('bot',pool[Math.floor(Math.random()*pool.length)],true,'粉丝向模拟动态',null,photo);localStorage.setItem(lastKey,String(Date.now()))}
   form.addEventListener('submit',e=>{e.preventDefault();send(input.value)});
   function schedule(first=false){clearTimeout(reportTimer);if(!currentUser)return;const delay=first?20000+Math.random()*25000:180000+Math.random()*300000;reportTimer=setTimeout(async()=>{await report();schedule(false)},delay)}
   const avatarEls=[document.querySelector('.avatar'),document.querySelector('.mini')],dialog=document.querySelector('#settingsDialog');
