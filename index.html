@@ -24,7 +24,8 @@
     html,body{height:100%;overflow:hidden}.app{height:100dvh;min-height:0;overflow:hidden}.sidebar{height:calc(100dvh - 48px);min-height:0;overflow:auto}.chat{height:calc(100dvh - 48px);min-height:0}.messages{min-height:0;overflow-y:auto;overscroll-behavior:contain}.composer{position:relative;z-index:3;flex-shrink:0}
     @media(max-width:760px){html,body{height:100%;overflow:hidden}.app{height:100dvh;min-height:100dvh;overflow:hidden}.chat{height:100dvh;min-height:0;max-height:100dvh}.messages{min-height:0;overflow-y:auto}.composer{padding-bottom:max(18px,env(safe-area-inset-bottom))}}
   .quick a{white-space:nowrap;border:1px solid #f4cada;color:#84405a;background:#fff;border-radius:99px;padding:8px 12px;font-size:13px;text-decoration:none}
-  </style>
+  .gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:8px;margin-top:12px}.gallery-grid img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;display:block}.gallery-source{display:block;color:#84405a;background:#fff1f6;padding:12px;border-radius:12px;margin:8px 0}.gallery-body{max-height:80dvh;overflow:auto}
+</style>
 </head>
 <body>
 <main class="app">
@@ -39,7 +40,7 @@
     <header class="top"><div class="mini">YHX</div><div><strong>严浩翔 · AI</strong><span class="status"><span class="dot"></span><span id="syncStatus">正在连接…</span></span></div><div class="account hidden" id="account"><img id="userPhoto" alt="账号头像"><button id="signOutBtn">退出</button></div><button class="badge" id="settingsTop" aria-label="打开个性化设置">设置</button></header>
     <div class="messages" id="messages" aria-live="polite"><div class="date">今天 · 模拟动态</div></div>
     <footer class="composer">
-      <div class="quick"><button type="button">不会每条都回复</button><button type="button">偶尔回看旧留言</button><a href="https://www.weibo.com/u/7191533806" target="_blank" rel="noopener noreferrer">看本人微博原帖 ↗</a></div>
+      <div class="quick"><button type="button">不会每条都回复</button><button type="button">偶尔回看旧留言</button><a href="https://www.weibo.com/u/7191533806" target="_blank" rel="noopener noreferrer">看本人微博原帖 ↗</a><button type="button" id="galleryBtn">写真相册</button></div>
       <div class="mobile-note">粉丝向模拟 · 非本人或官方账号</div>
       <form class="inputrow" id="form"><input id="input" maxlength="280" autocomplete="off" placeholder="写下想说的话（不会触发回复）…" aria-label="输入留言"/><button class="send" id="send" aria-label="保存留言">➤</button></form>
     </footer>
@@ -47,6 +48,7 @@
 </main>
 <div class="login-layer" id="loginLayer"><div class="login-card"><div class="logo">✦</div><h2>登录小严宇宙</h2><p>用 Google 账号登录后，手机和电脑会同步你的聊天记录。</p><button class="login-btn" id="loginBtn">使用 Google 账号登录</button><small>粉丝向 AI 模拟，并非严浩翔本人、工作室或官方服务。</small></div></div>
 <dialog id="settingsDialog"><div class="settings"><h2>个性化设置</h2><p>选择头像、聊天背景和模拟动态可使用的照片。图片会压缩后同步到你的账号。</p><div class="setting-actions"><button id="avatarPick">更换头像</button><button id="backgroundPick">更换聊天背景</button><button id="reportPhotosPick">添加动态照片</button><button id="resetAvatar" class="reset">恢复默认头像</button><button id="resetBackground" class="reset">恢复默认背景</button></div><p class="hint" id="photoHint">动态照片只会从你上传的图片中随机选择，约四分之一的模拟动态会带图。</p><button class="close-dialog" id="closeSettings">完成</button><input hidden type="file" id="avatarFile" accept="image/*"><input hidden type="file" id="backgroundFile" accept="image/*"><input hidden multiple type="file" id="reportPhotosFile" accept="image/*"></div></dialog>
+<dialog id="galleryDialog" aria-labelledby="galleryTitle"><div class="settings gallery-body"><h2 id="galleryTitle">写真相册</h2><p>公开照片来源和你自己收藏的照片分开显示。</p><a class="gallery-source" href="https://www.weibo.com/u/7191533806" target="_blank" rel="noopener noreferrer">严浩翔本人微博 · 点进「他的相册」看原图 ↗</a><h3>我的收藏</h3><p id="galleryStatus" role="status"></p><div class="gallery-grid" id="galleryGrid"></div><p class="hint">在「设置 → 添加动态照片」上传的照片会显示在这里，也可能出现在模拟报备里。</p><form method="dialog"><button class="close-dialog">关闭相册</button></form></div></dialog>
 <script type="module">
   import {initializeApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
   import {getAuth,GoogleAuthProvider,signInWithPopup,signInWithRedirect,getRedirectResult,signOut,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
@@ -171,6 +173,24 @@
   document.querySelector('#resetAvatar').onclick=async()=>{applyAvatar('');if(currentUser)await setDoc(doc(db,'users',currentUser.uid,'settings','theme'),{avatar:''},{merge:true})};document.querySelector('#resetBackground').onclick=async()=>{applyBackground('');if(currentUser)await setDoc(doc(db,'users',currentUser.uid,'settings','theme'),{background:''},{merge:true})};
   document.querySelector('#clearBtn').onclick=async()=>{if(!currentUser||!confirm('确定清空账号中的全部动态和留言吗？此操作会同步到所有设备。'))return;const s=await getDocs(collection(db,'users',currentUser.uid,'messages'));const b=writeBatch(db);s.forEach(d=>b.delete(d.ref));await b.commit();await addDoc(collection(db,'users',currentUser.uid,'messages'),{...starters[0],createdAt:serverTimestamp()})};
   document.querySelector('#profileBtn').onclick=()=>alert('公开资料卡｜严浩翔\n\n2004年出生于重庆，中国歌手、演员，时代少年团成员。公开舞台与作品中较多接触说唱、歌曲创作和舞台表演。\n\n本页面只把这些公开职业背景作为创作方向；所有“正在做什么”的消息都是程序生成的虚构情境，不对应真实行程、私人生活或本人观点。');
+  const gallery=document.querySelector('#galleryDialog'),galleryGrid=document.querySelector('#galleryGrid'),galleryStatus=document.querySelector('#galleryStatus');
+  document.querySelector('#galleryBtn').onclick=async()=>{
+    const user=currentUser;
+    galleryGrid.replaceChildren();
+    galleryStatus.textContent=user?'正在加载…':'登录后可查看自己的照片。';
+    gallery.showModal();
+    if(!user)return;
+    try{
+      const snap=await getDocs(collection(db,'users',user.uid,'photos'));
+      if(currentUser?.uid!==user.uid||!gallery.open)return;
+      const photos=snap.docs.map(d=>d.data().data).filter(x=>typeof x==='string'&&/^data:image\/(jpeg|png|webp);base64,/.test(x));
+      for(const src of photos){
+        const img=document.createElement('img');img.src=src;img.alt='我上传的收藏照片';img.loading='lazy';galleryGrid.append(img);
+      }
+      galleryStatus.textContent=photos.length?'':'还没有收藏照片。';
+    }catch{if(currentUser?.uid===user.uid)galleryStatus.textContent='暂时加载不了，请稍后再试。'}
+  };
+  gallery.addEventListener('close',()=>galleryGrid.replaceChildren());
   const loginBtn=document.querySelector('#loginBtn');
   getRedirectResult(auth).catch(e=>alert('Google 登录没有完成：'+(e.code||'请检查浏览器设置后重试')));
   loginBtn.onclick=async()=>{loginBtn.disabled=true;loginBtn.textContent='正在打开 Google 登录…';try{const mobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);if(mobile){await signInWithRedirect(auth,provider);return}await signInWithPopup(auth,provider)}catch(e){if(['auth/popup-blocked','auth/cancelled-popup-request','auth/operation-not-supported-in-this-environment'].includes(e.code)){await signInWithRedirect(auth,provider);return}const tips={'auth/unauthorized-domain':'当前网址还没有加入 Firebase 授权域名。','auth/popup-closed-by-user':'登录窗口已关闭，请再试一次。','auth/network-request-failed':'网络连接失败，请检查网络后重试。'};alert(tips[e.code]||('Google 登录没有完成：'+(e.code||e.message)))}finally{loginBtn.disabled=false;loginBtn.textContent='使用 Google 账号登录'}};
