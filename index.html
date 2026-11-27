@@ -60,6 +60,20 @@
   const avatarKey='xiaoyan-avatar-v1',backgroundKey='xiaoyan-background-v1';
   const starters=[{r:'bot',t:'今天先来留一条。刚把耳机戴上，准备听一遍练习录音，看看还有哪里能再调整。',tag:'模拟动态'}];
   const reports=[
+    "点了个微辣。第一口还行。第二口开始找水了",
+    "刚说不来一口了。谁让你把烤肠放那么近的",
+    "出门前试了两瓶香水。现在好了，分不清哪一瓶是我想喷的",
+    "游戏输了。不是不服啊，就是这个结算画面我还想再看一次",
+    "本来只想买水。收银的时候多了一包零食。它自己跟过来的",
+    "拍了张照片，想试试近一点。行，现在整张只剩半张脸",
+    "群里说谁先笑谁输。提议那个人第一个笑的",
+    "吃饭吃到一半才想起来要拍。算了，给空碗留个纪念",
+    "刚还说不饿。外卖到了以后我第一个去开门",
+    "录歌录到一句尾音。第三遍其实就差不多了，但第五遍那个停顿我更喜欢",
+    "排练的时候总觉得开场差一点。后来把动作收小了，反倒更利落",
+    "回听编曲把鼓先关了。没想到最想留的是伴奏停掉的那两秒",
+    "MV 有一镜拍了六遍。回放看了一圈，原来还是第一遍顺眼",
+    "彩排完脑子还在数拍。下楼梯差点给自己数了个五六七八",
     '刚结束一轮练习。先不急着重复，回听一下细节，节奏和咬字都要再确认。',
     '路上戴着耳机听歌。换一种编曲去听，同一段旋律会有完全不同的感觉。',
     '今天在整理最近记下来的旋律和词句。先存着，等它们慢慢长成完整的作品。',
@@ -154,9 +168,30 @@
   function render(){const oldTop=box.scrollTop,nearBottom=box.scrollHeight-box.scrollTop-box.clientHeight<90;box.querySelectorAll('.bubble').forEach(x=>x.remove());history.forEach(x=>add(x.r,x.t,false,x.tag||'',x.createdAt,x.photo||'',false));requestAnimationFrame(()=>{box.scrollTop=nearBottom?box.scrollHeight:oldTop})}
   function add(r,t,save=true,tag='',createdAt=null,photo='',move=true){const el=document.createElement('div');el.className='bubble '+(r==='user'?'user':'bot');let stamp=createdAt?.toDate?createdAt.toDate():createdAt?new Date(createdAt):new Date();el.innerHTML=(photo?'<img class="report-photo" src="'+photo+'" alt="你上传的模拟动态照片">':'')+esc(t)+'<div class="meta">'+(tag?esc(tag)+' · ':'')+stamp.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})+'</div>';box.append(el);if(move)requestAnimationFrame(()=>{box.scrollTop=box.scrollHeight});if(save&&currentUser){addDoc(collection(db,'users',currentUser.uid,'messages'),{r,t,tag,photo,createdAt:serverTimestamp()}).catch(()=>alert('暂时无法同步，请检查网络后重试。'))}}
   function send(t){t=t.trim();if(!t)return;add('user',t,true,'你的留言');input.value='';requestAnimationFrame(()=>input.focus({preventScroll:true}))}
-  const dailyReports=reports.filter(t=>/早餐|外卖|饮料|便利店|洗完头|天气|下雨|窗外|衣柜|房间|相册|视频|散步|游戏|零食|吃饭|充电|困|小动物|照片|群里|普通的一天/.test(t));
+  const dailyReports=reports.filter(t=>["点了个微辣。第一口还行。第二口开始找水了","刚说不来一口了。谁让你把烤肠放那么近的","出门前试了两瓶香水。现在好了，分不清哪一瓶是我想喷的","游戏输了。不是不服啊，就是这个结算画面我还想再看一次","本来只想买水。收银的时候多了一包零食。它自己跟过来的","拍了张照片，想试试近一点。行，现在整张只剩半张脸","群里说谁先笑谁输。提议那个人第一个笑的","吃饭吃到一半才想起来要拍。算了，给空碗留个纪念","刚还说不饿。外卖到了以后我第一个去开门"].includes(t)||/早餐|外卖|饮料|便利店|洗完头|天气|下雨|窗外|衣柜|房间|相册|视频|散步|游戏|零食|吃饭|充电|困|小动物|照片|群里|普通的一天/.test(t));
   const featuredReports=reports.filter(t=>/演唱会|联排|后台|品牌|LV|KFC|奥利奥|魔芋爽|自己的歌|制作老师|MV/.test(t));
-  function oldMessageReply(){const bots=history.filter(x=>x.r==='bot').map(x=>x.t||''),candidates=history.filter(x=>x.r==='user'&&x.t?.trim()).slice(-20).reverse();for(const item of candidates){const full=item.t.trim().replace(/\s+/g,' '),quote=full.length>24?full.slice(0,24)+'…':full;if(bots.some(t=>t.includes('“'+quote+'”')))continue;const lead='看到你前面说的“'+quote+'”。';if(/累|困|睡|熬夜|没精神/.test(full))return lead+'累了就歇会儿  硬撑又不加分';if(/考试|作业|学习|复习|成绩|学校|课/.test(full))return lead+'我倒觉得不用一口气做完  先挑一件最要紧的';if(/饿|吃|饭|外卖|零食/.test(full))return lead+'先去吃点东西。空着肚子做决定不太靠谱 ^^';if(/难过|伤心|烦|生气|不开心|焦虑|压力/.test(full))return lead+'不用急着把情绪整理得很漂亮。想安静一会儿也可以，等你想说的时候再慢慢说。';if(/开心|高兴|成功|完成|赢了|太好了/.test(full))return lead+'这事值得高兴  先别急着想下一关';if(/冷|热|下雨|天气|台风/.test(full))return lead+'出门记得看一下天气。这个提醒听起来很普通，但忘记的时候通常会很狼狈。';}return''}
+  const replyStyles=[
+    [/练舞|跳舞|练动作/,['有一段怎么练都不顺的话，先拆两拍试试','练到腿软就别加练了啊  腿又不发加班费']],
+    [/难过|伤心|不开心|焦虑|压力|心烦/,['今天确实挺难熬的。先缓一会儿，不急着想怎么办','有些事就是会烦  不用现在就说服自己没事']],
+    [/很累|好累|困了|熬夜|没精神/,['累了就歇会儿  硬撑又不加分','先去睡  明天起来再跟这事较劲']],
+    [/考试|作业|复习|学习/,['先搞最要紧的那一件。剩下的排队','先做一道试试  别还没开始就跟整张卷子较劲']],
+    [/吃饭|外卖|螺蛳粉|火鸡面|烤肠|好饿/,['说得我都想去看看还有没有夜宵了','先说好，我就尝一口。碗别递给我啊']],
+    [/打游戏|游戏输了|游戏赢了/,['输一把可以。说我不行那得再开一把了 ^^','等一下  这局有复盘吗']],
+    [/好开心|高兴|成功了|完成了|终于做完/,['可以啊  这次得认真高兴一下','那就先庆祝  别这么快给自己派下一件事']],
+    [/下雨|台风|天气/,['出门带伞啊。别跟雨赌它一会儿就停','这种天最适合找首歌听，然后看着窗外发会儿呆']]
+  ];
+  function oldMessageReply(){
+    const bots=history.filter(x=>x.r==='bot').map(x=>x.t||'');
+    for(const item of history.filter(x=>x.r==='user'&&x.t?.trim()).slice(-20).reverse()){
+      const full=item.t.trim().replace(/\s+/g,' '), quote=full.length>24?full.slice(0,24)+'…':full;
+      const ref='“'+quote+'”';
+      if(bots.some(t=>t.includes(ref)))continue;
+      const match=replyStyles.find(([re])=>re.test(full));
+      const options=match?.[1].filter(t=>!bots.slice(-12).some(b=>b.includes(t)))||[];
+      if(options.length)return options[Math.floor(Math.random()*options.length)]+'  · 回你前面那句 '+ref;
+    }
+    return '';
+  }
   async function report(){if(!currentUser)return;if(!reportPhotos.length){const s=await getDocs(collection(db,'users',currentUser.uid,'photos'));reportPhotos=s.docs.map(d=>d.data().data).filter(Boolean).slice(-20)}const reply=Math.random()<.18?oldMessageReply():'';if(reply){add('bot',reply,true,'粉丝向模拟回复');localStorage.setItem(lastKey,String(Date.now()));return}let used=history.filter(x=>x.r==='bot').slice(-7).map(x=>x.t),roll=Math.random(),base=roll<.14&&featuredReports.length?featuredReports:roll<.76&&dailyReports.length?dailyReports:reports,pool=base.filter(x=>!used.includes(x));if(!pool.length)pool=base;const photo=reportPhotos.length&&Math.random()<.25?reportPhotos[Math.floor(Math.random()*reportPhotos.length)]:'';add('bot',pool[Math.floor(Math.random()*pool.length)],true,'粉丝向模拟动态',null,photo);localStorage.setItem(lastKey,String(Date.now()))}
   form.addEventListener('submit',e=>{e.preventDefault();send(input.value)});
   function schedule(first=false){clearTimeout(reportTimer);if(!currentUser)return;const delay=first?20000+Math.random()*25000:180000+Math.random()*300000;reportTimer=setTimeout(async()=>{await report();schedule(false)},delay)}
