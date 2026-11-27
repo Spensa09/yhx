@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>真实动态 · 小严宇宙</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f7f3ee;color:#211b26;font:16px/1.65 system-ui,sans-serif}a{color:inherit}header,main,footer{width:min(100% - 36px,1040px);margin:auto}header{display:flex;justify-content:space-between;gap:12px;padding:22px 0;font-size:14px}header a{text-decoration:none}.hero{position:relative;overflow:hidden;isolation:isolate;background:radial-gradient(ellipse at right,#643e55,transparent 66%),#211925;color:#fff5ef;border-radius:26px;padding:clamp(26px,6vw,72px);min-height:290px;display:grid;align-content:center}.hero:before,.hero:after{content:'';position:absolute;z-index:-1;width:min(48vw,500px);aspect-ratio:1;right:-7%;top:-45%;border:1px solid #ffc5a85e;border-radius:50%}.hero:after{transform:translate(-7%,17%) scale(.77)}.eyebrow{font-size:12px;letter-spacing:.18em;color:#ffcaac}.hero h1{margin:8px 0 6px;font-size:clamp(42px,9vw,92px);letter-spacing:-.075em;line-height:1.12}.hero p{margin:8px 0;color:#e9d8de}.section{margin-top:30px}.section h2{margin:0 0 12px}.card{display:block;background:#fff;border:1px solid #e8ded8;padding:clamp(18px,4vw,32px);border-radius:20px;text-decoration:none;overflow-wrap:anywhere}.card:hover,.card:focus-visible{border-color:#8e526e}.card h3{margin:8px 0;font-size:clamp(20px,4vw,30px);line-height:1.23}.card p{margin:0 0 14px;color:#544953}.meta{font-size:13px;color:#834561}.out{font-size:14px;font-weight:700}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.sources{display:flex;flex-wrap:wrap;gap:10px}.sources a{padding:8px 12px;border:1px solid #dbcbd4;border-radius:99px;text-decoration:none}footer{padding:28px 0;color:#665761;font-size:13px}[hidden]{display:none!important}@media(max-width:620px){.grid{grid-template-columns:1fr}}
+</style>
+<header><a href="./">← 返回小严宇宙</a><span>公开作品与活动档案</span></header>
+<main><section class="hero"><span class="eyebrow">YHX / PUBLIC ARCHIVE</span><h1>真实动态</h1><p>新歌、舞台与影像。每条记录都有日期和出处。</p><p>非官方整理 · 不含模拟聊天或私人行程</p></section>
+<p id="status" role="status">正在读取动态…</p>
+<section class="section" id="featured" hidden><h2>最新收录</h2><div id="lead"></div></section>
+<section class="section" id="history" hidden><h2>往期动态</h2><div class="grid" id="archive"></div></section>
+<section class="section"><h2>原始来源</h2><div class="sources"><a href="https://www.weibo.com/u/7191533806" target="_blank" rel="noopener noreferrer">严浩翔本人微博 ↗</a></div></section></main>
+<footer>小严宇宙 · 粉丝向公开资料整理，不代表本人、团队或平台。</footer>
+<script>
+const el=id=>document.getElementById(id);
+function card(item){
+ const a=document.createElement('a');a.className='card';a.href=item.url;a.target='_blank';a.rel='noopener noreferrer';
+ for(const [tag,cls,txt] of [['div','meta',item.date],['h3','',item.title],['p','',item.summary],['span','out','查看来源 ↗']]){
+ const node=document.createElement(tag);node.className=cls;node.textContent=txt;a.append(node);
+ }return a;
+}
+(async()=>{
+ try{
+ const response=await fetch('./public-updates.json',{cache:'no-cache'});if(!response.ok)throw Error();
+ const rows=(await response.json()).filter(x=>x&&/^\d{4}-\d{2}-\d{2}$/.test(x.date)&&typeof x.title==='string'&&typeof x.summary==='string'&&typeof x.url==='string'&&/^https:\/\//i.test(x.url)).sort((a,b)=>b.date.localeCompare(a.date));
+ if(!rows.length){el('status').textContent='暂时没有已核实的动态。';return}
+ el('lead').append(card(rows[0]));el('featured').hidden=false;
+ for(const item of rows.slice(1))el('archive').append(card(item));
+ el('history').hidden=rows.length<2;el('status').hidden=true;
+ }catch{el('status').textContent='暂时无法加载动态，请刷新重试。'}
+})();
+</script></html>
