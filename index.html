@@ -40,7 +40,7 @@
     <header class="top"><div class="mini">YHX</div><div><strong>严浩翔 · AI</strong><span class="status"><span class="dot"></span><span id="syncStatus">正在连接…</span></span></div><div class="account hidden" id="account"><img id="userPhoto" alt="账号头像"><button id="signOutBtn">退出</button></div><button class="badge" id="settingsTop" aria-label="打开个性化设置">设置</button></header>
     <div class="messages" id="messages" aria-live="polite"><div class="date">今天 · 模拟动态</div></div>
     <footer class="composer">
-      <div class="quick"><button type="button">不会每条都回复</button><button type="button">偶尔回看旧留言</button><a href="https://www.weibo.com/u/7191533806" target="_blank" rel="noopener noreferrer">看本人微博原帖 ↗</a><button type="button" id="galleryBtn">写真相册</button></div>
+      <div class="quick"><button type="button">不会每条都回复</button><button type="button">偶尔回看旧留言</button><a href="https://www.weibo.com/u/7191533806" target="_blank" rel="noopener noreferrer">看本人微博原帖 ↗</a><button type="button" id="galleryBtn">写真相册</button><button type="button" id="publicNewsBtn">真实动态</button></div>
       <div class="mobile-note">粉丝向模拟 · 非本人或官方账号</div>
       <form class="inputrow" id="form"><input id="input" maxlength="280" autocomplete="off" placeholder="写下想说的话（不会触发回复）…" aria-label="输入留言"/><button class="send" id="send" aria-label="保存留言">➤</button></form>
     </footer>
@@ -49,6 +49,7 @@
 <div class="login-layer" id="loginLayer"><div class="login-card"><div class="logo">✦</div><h2>登录小严宇宙</h2><p>用 Google 账号登录后，手机和电脑会同步你的聊天记录。</p><button class="login-btn" id="loginBtn">使用 Google 账号登录</button><small>粉丝向 AI 模拟，并非严浩翔本人、工作室或官方服务。</small></div></div>
 <dialog id="settingsDialog"><div class="settings"><h2>个性化设置</h2><p>选择头像、聊天背景和模拟动态可使用的照片。图片会压缩后同步到你的账号。</p><div class="setting-actions"><button id="avatarPick">更换头像</button><button id="backgroundPick">更换聊天背景</button><button id="reportPhotosPick">添加动态照片</button><button id="resetAvatar" class="reset">恢复默认头像</button><button id="resetBackground" class="reset">恢复默认背景</button></div><p class="hint" id="photoHint">动态照片只会从你上传的图片中随机选择，约四分之一的模拟动态会带图。</p><button class="close-dialog" id="closeSettings">完成</button><input hidden type="file" id="avatarFile" accept="image/*"><input hidden type="file" id="backgroundFile" accept="image/*"><input hidden multiple type="file" id="reportPhotosFile" accept="image/*"></div></dialog>
 <dialog id="galleryDialog" aria-labelledby="galleryTitle"><div class="settings gallery-body"><h2 id="galleryTitle">写真相册</h2><p>公开照片来源和你自己收藏的照片分开显示。</p><a class="gallery-source" href="https://www.weibo.com/u/7191533806" target="_blank" rel="noopener noreferrer">严浩翔本人微博 · 点进「他的相册」看原图 ↗</a><h3>我的收藏</h3><p id="galleryStatus" role="status"></p><div class="gallery-grid" id="galleryGrid"></div><p class="hint">在「设置 → 添加动态照片」上传的照片会显示在这里，也可能出现在模拟报备里。</p><form method="dialog"><button class="close-dialog">关闭相册</button></form></div></dialog>
+<dialog id="publicNewsDialog" aria-labelledby="publicNewsTitle"><div class="settings gallery-body"><h2 id="publicNewsTitle">真实动态</h2><p>公开作品和活动资讯 · 与模拟聊天分开</p><p id="publicNewsStatus" role="status"></p><div id="publicNewsList"></div><form method="dialog"><button class="close-dialog">关闭</button></form></div></dialog>
 <script type="module">
   import {initializeApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
   import {getAuth,GoogleAuthProvider,signInWithPopup,signInWithRedirect,getRedirectResult,signOut,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
@@ -229,6 +230,23 @@
     }catch{if(currentUser?.uid===user.uid)galleryStatus.textContent='暂时加载不了，请稍后再试。'}
   };
   gallery.addEventListener('close',()=>galleryGrid.replaceChildren());
+  document.querySelector('#publicNewsBtn').onclick=async()=>{
+    const dialog=document.querySelector('#publicNewsDialog'), status=document.querySelector('#publicNewsStatus'), list=document.querySelector('#publicNewsList');
+    list.replaceChildren();status.textContent='加载中…';dialog.showModal();
+    try{
+      const response=await fetch('./public-updates.json',{cache:'no-cache'});
+      if(!response.ok)throw Error('feed');
+      const rows=await response.json();
+      for(const item of rows.slice(0,30)){
+        const url=new URL(item.url);if(url.protocol!=='https:')continue;
+        const card=document.createElement('article'),link=document.createElement('a'),summary=document.createElement('p');
+        link.className='gallery-source';link.href=url.href;link.target='_blank';link.rel='noopener noreferrer';
+        link.textContent=item.date+' · '+item.title+' ↗';summary.textContent=item.summary;
+        card.append(link,summary);list.append(card);
+      }
+      status.textContent=list.childElementCount?'':'暂时没有已核实的新动态。';
+    }catch{status.textContent='暂时无法读取动态，请稍后重试。'}
+  };
   const loginBtn=document.querySelector('#loginBtn');
   getRedirectResult(auth).catch(e=>alert('Google 登录没有完成：'+(e.code||'请检查浏览器设置后重试')));
   loginBtn.onclick=async()=>{loginBtn.disabled=true;loginBtn.textContent='正在打开 Google 登录…';try{const mobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);if(mobile){await signInWithRedirect(auth,provider);return}await signInWithPopup(auth,provider)}catch(e){if(['auth/popup-blocked','auth/cancelled-popup-request','auth/operation-not-supported-in-this-environment'].includes(e.code)){await signInWithRedirect(auth,provider);return}const tips={'auth/unauthorized-domain':'当前网址还没有加入 Firebase 授权域名。','auth/popup-closed-by-user':'登录窗口已关闭，请再试一次。','auth/network-request-failed':'网络连接失败，请检查网络后重试。'};alert(tips[e.code]||('Google 登录没有完成：'+(e.code||e.message)))}finally{loginBtn.disabled=false;loginBtn.textContent='使用 Google 账号登录'}};
